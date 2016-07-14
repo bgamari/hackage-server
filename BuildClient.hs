@@ -587,6 +587,7 @@ buildPackage verbosity opts config docInfo = do
         pkg_url      = "/package" </> "$pkg-$version"
         pkg_flags    =
             ["--enable-documentation",
+             "--hyperlinked-source",
              "--htmldir=" ++ doc_dir_tmpl,
              -- We only care about docs, so we want to build as
              -- quickly as possible, and hence turn
