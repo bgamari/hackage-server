@@ -297,13 +297,17 @@ instance MemSize RsFlags where
 instance MemSize Length where
     memSize _ = memSize0
 
-instance Text Day where
-  disp  = PP.text . show
-  parse = readS_to_P (reads :: ReadS Day)
+instance Pretty Day where
+  pretty = PP.text . show
 
-instance Text UTCTime where
-  disp  = PP.text . show
-  parse = readS_to_P (reads :: ReadS UTCTime)
+instance Parsec Day where
+  parsec = undefined --readS_to_P (reads :: ReadS Day)
+
+instance Pretty UTCTime where
+  pretty  = PP.text . show
+
+instance Parsec UTCTime where
+  parsec = undefined --readS_to_P (reads :: ReadS UTCTime)
 
 -------------------
 -- Arbitrary instances

@@ -20,6 +20,8 @@ module Distribution.Server.Util.CabalRevisions
     ) where
 
 -- NB: This module avoids to import any hackage-server modules
+import Distribution.CabalSpecVersion
+import Distribution.Fields.Pretty (showFields)
 import Distribution.Types.Dependency
 import Distribution.Types.ExeDependency
 import Distribution.Types.PkgconfigDependency
@@ -167,13 +169,13 @@ checkGenericPackageDescription
 
     checkMaybe "Cannot add or remove library sections"
       (checkCondTree checkLibrary)
-      (withComponentName' CLibName <$> libsA)
-      (withComponentName' CLibName <$> libsB)
+      (withComponentName' (CLibName LMainLibName) <$> libsA)
+      (withComponentName' (CLibName LMainLibName) <$> libsB)
 
     checkListAssoc "Cannot add or remove sub-library sections"
       (checkCondTree checkLibrary)
-      (withComponentName CSubLibName <$> sublibsA)
-      (withComponentName CSubLibName <$> sublibsB)
+      (withComponentName (CLibName . LSubLibName) <$> sublibsA)
+      (withComponentName (CLibName . LSubLibName) <$> sublibsB)
 
     checkListAssoc "Cannot add or remove foreign-library sections"
       (checkCondTree checkForeignLib)
@@ -448,12 +450,12 @@ instance IsDependency Dependency where
     type DepKey Dependency = PackageName
 
     depTypeName Proxy             = "library"
-    depKey (Dependency pkgname _) = pkgname
+    depKey dep                    = depPkgName dep
     depKeyShow Proxy              = prettyShow''
-    depVerRg (Dependency _ vr)    = vr
-    reconstructDep                = Dependency
+    depVerRg dep                  = undefined --depVerRange dep -- TODO: VersionRange incompat
+    reconstructDep                = undefined
 
-    depInAddWhitelist (Dependency pn _) = pn `elem`
+    depInAddWhitelist (Dependency pn _ _) = pn `elem`
     -- Special case: there are some pretty weird broken packages out there, see
     --   https://github.com/haskell/hackage-server/issues/303
     -- which need us to add a new dep on `base`
@@ -509,8 +511,8 @@ instance IsDependency PkgconfigDependency where
     depTypeName Proxy                      = "pkg-config"
     depKey (PkgconfigDependency pkgname _) = pkgname
     depKeyShow Proxy                       = prettyShow''
-    depVerRg (PkgconfigDependency _ vr)    = vr
-    reconstructDep                         = PkgconfigDependency
+    depVerRg (PkgconfigDependency _ vr)    = undefined
+    reconstructDep                         = undefined
 
 
 -- The result tuple represents the 3 canonicalised dependency
@@ -559,10 +561,11 @@ checkSetupBuildInfo (Just (SetupBuildInfo setupDependsA _internalA))
 
 checkLibrary :: ComponentName -> Check Library
 checkLibrary componentName
-             (Library modulesA reexportedA requiredSigsA exposedSigsA
+             (Library libNameA modulesA reexportedA requiredSigsA exposedSigsA
                       exposedA buildInfoA)
-             (Library modulesB reexportedB requiredSigsB exposedSigsB
+             (Library libNameB modulesB reexportedB requiredSigsB exposedSigsB
                       exposedB buildInfoB) = do
+  checkSame "Cannot change the library name" libNameA libNameB
   checkSame "Cannot change the exposed modules" modulesA modulesB
   checkSame "Cannot change the re-exported modules" reexportedA reexportedB
   checkSame "Cannot change the required signatures" requiredSigsA requiredSigsB
@@ -706,10 +709,12 @@ ppSourceRepo :: SourceRepo -> Doc
 ppSourceRepo repo = emptyLine $
     text "source-repository" <+> pretty (repoKind repo)
     $+$
-    nest 4 (prettyFieldGrammar (sourceRepoFieldGrammar (repoKind repo)) repo)
+    nest 4 (text $ showFields (const []) fields)
   where
     emptyLine :: Doc -> Doc
     emptyLine d = text " " $+$ d
+    specVer = CabalSpecV2_4
+    fields = prettyFieldGrammar specVer (sourceRepoFieldGrammar (repoKind repo)) repo
 
 -- TODO: Verify that we don't need to worry about UTF8
 -- | Insert or update \"x-revision:\" field
