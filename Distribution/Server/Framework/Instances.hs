@@ -44,7 +44,7 @@ import Happstack.Server
 import Data.List (stripPrefix)
 
 import qualified Text.PrettyPrint as PP (text)
-import Distribution.Compat.ReadP (readS_to_P)
+import Text.ParserCombinators.ReadP (readS_to_P)
 
 -- These types are not defined in this package, so we cannot easily control
 -- changing these instances when the types change. So it's not safe to derive
@@ -419,10 +419,10 @@ instance Migrate VersionRange where
     migrate (VersionRange_v0 v) = v
 
 
-textGet_v0 :: Text a => Serialize.Get a
+textGet_v0 :: Parsec a => Serialize.Get a
 textGet_v0 = (fromJust . simpleParse) <$> Serialize.get
 
-textPut_v0 :: Text a => a -> Serialize.Put
+textPut_v0 :: Pretty a => a -> Serialize.Put
 textPut_v0 = Serialize.put . display
 
 ---------------------------------------------------------------------
