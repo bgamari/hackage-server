@@ -410,7 +410,7 @@ getDocumentationStats :: Verbosity
                       -> IO [DocInfo]
 getDocumentationStats verbosity opts config pkgs = do
     notice verbosity "Downloading documentation index"
-    httpSession verbosity "hackage-build" version $ do
+    httpSession "hackage-build" version $ do
       curGhcVersion <- liftIO $ case bo_buildOlderGHC opts of
                                   True -> getGHCversion
                                   False -> return Nothing
@@ -879,7 +879,7 @@ uploadResults :: Verbosity -> BuildConfig -> DocInfo -> Maybe FilePath
                     -> Maybe FilePath -> FilePath -> Maybe FilePath -> Maybe FilePath -> Bool -> IO ()
 uploadResults verbosity config docInfo
               mdocsTarballFile buildReportFile buildLogFile testLogFile coverageFile installOk =
-    httpSession verbosity "hackage-build" version $ do
+    httpSession "hackage-build" version $ do
       case mdocsTarballFile of
         Nothing              -> return ()
         Just docsTarballFile ->
