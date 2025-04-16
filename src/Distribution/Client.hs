@@ -244,13 +244,14 @@ mkUploadRequest
     -> URI
     -> String        -- ^ MIME type
     -> Maybe String  -- ^ encoding
+    -> RequestHeaders
     -> ByteString    -- ^ body
     -> HttpSession Request
-mkUploadRequest meth uri mimetype mEncoding body = do
-    req <- mkRequest meth headers uri
+mkUploadRequest meth uri mimetype mEncoding headers body = do
+    req <- mkRequest meth (headers ++ headers') uri
     return $ req { requestBody = RequestBodyLBS body }
   where
-    headers = [ (hContentLength, BSS.pack $ show (BS.length body))
+    headers' = [ (hContentLength, BSS.pack $ show (BS.length body))
               , (hContentType, BSS.pack mimetype) ]
               ++ case mEncoding of
                 Nothing       -> []
@@ -354,7 +355,7 @@ requestGET' uri = do
 
 requestPUT :: URI -> String -> Maybe String -> ByteString -> HttpSession ()
 requestPUT uri mimetype mEncoding body = do
-    req <- mkUploadRequest "PUT" uri mimetype mEncoding body
+    req <- mkUploadRequest "PUT" uri mimetype mEncoding [] body
     runRequest req $ \rsp -> do
         rsp' <- responseReadBSL rsp
         checkStatus uri rsp'

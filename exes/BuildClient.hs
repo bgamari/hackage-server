@@ -894,7 +894,7 @@ withAuth config req =
 putDocsTarball :: BuildConfig -> DocInfo -> FilePath -> HttpSession ()
 putDocsTarball config docInfo docsTarballFile = do
     body <- liftIO $ BS.readFile docsTarballFile
-    req <- withAuth config <$> mkUploadRequest "PUT" uri mimetype mEncoding body
+    req <- withAuth config <$> mkUploadRequest "PUT" uri mimetype mEncoding [] body
     runRequest req $ \rsp -> do
         rsp' <- responseReadBSL rsp
         checkStatus uri rsp'
@@ -911,11 +911,9 @@ putBuildFiles config docInfo reportFile buildLogFile testLogFile coverageFile in
     testContent     <- liftIO $ traverse readFile testLogFile
     coverageContent <- liftIO $ traverse readFile coverageFile
     let uri   = docInfoReports config docInfo
-        body  = encode $ BR.BuildFiles reportContent (Just logContent) testContent coverageContent (not installOk)
-    let headers = [ (hContentType, BSS.pack "application/json")
-                  , (hContentLength, BSS.pack $ show (BS.length body))
-                  ]
-    req <- withAuth config <$> mkRequest (BSS.pack "POST") headers uri
+        body  = encode (BR.BuildFiles reportContent (Just logContent) testContent coverageContent (not installOk)) <> "\n\n"
+    let headers = [ (hAccept, BSS.pack "application/json") ]
+    req <- withAuth config <$> mkUploadRequest (BSS.pack "PUT") uri "application/json" Nothing headers body
     runRequest req $ \rsp -> do
         case statusCode $ responseStatus rsp of
           --TODO: fix server to not do give 303, 201 is more appropriate
