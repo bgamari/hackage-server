@@ -911,7 +911,7 @@ putBuildFiles config docInfo reportFile buildLogFile testLogFile coverageFile in
     testContent     <- liftIO $ traverse readFile testLogFile
     coverageContent <- liftIO $ traverse readFile coverageFile
     let uri   = docInfoReports config docInfo
-        body  = encode (BR.BuildFiles reportContent (Just logContent) testContent coverageContent (not installOk)) <> "\n\n"
+        body  = encode $ BR.BuildFiles reportContent (Just logContent) testContent coverageContent (not installOk)
     let headers = [ (hAccept, BSS.pack "application/json") ]
     req <- withAuth config <$> mkUploadRequest (BSS.pack "PUT") uri "application/json" Nothing headers body
     runRequest req $ \rsp -> do
