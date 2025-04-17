@@ -920,7 +920,7 @@ putBuildFiles config docInfo reportFile buildLogFile testLogFile coverageFile in
           303 -> return ()
           _   -> do rsp' <- responseReadBSL rsp
                     checkStatus uri rsp'
-                    fail "Unexpected response from server."
+                    fail $ "Unexpected response from server: " <> show (responseStatus rsp)
 
 
 -------------------------
